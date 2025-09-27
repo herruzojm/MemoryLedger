@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MemoryLedger</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <h1>MemoryLedger</h1>
+      <p>Encrypted diaries to remember the moments that matter.</p>
+    </header>
+    <main class="app-layout">
+      <aside class="sidebar">
+        <section class="card">
+          <h2>Available diaries</h2>
+          <ul id="diary-list" class="diary-list"></ul>
+          <p class="hint">Use the password field below to open or delete a diary.</p>
+        </section>
+        <section class="card">
+          <h2>Create a diary</h2>
+          <form id="create-diary-form" class="form-grid">
+            <label for="create-name">Name</label>
+            <input id="create-name" name="name" type="text" required />
+            <label for="create-password">Password</label>
+            <input id="create-password" name="password" type="password" required />
+            <button type="submit" class="primary">Create diary</button>
+          </form>
+        </section>
+      </aside>
+      <section class="content">
+        <div id="message" class="message hidden" role="status" aria-live="polite"></div>
+        <section class="card">
+          <h2>Open a diary</h2>
+          <form id="open-diary-form" class="form-grid">
+            <label for="open-name">Name</label>
+            <input id="open-name" name="name" type="text" required />
+            <label for="open-password">Password</label>
+            <input id="open-password" name="password" type="password" required />
+            <div class="button-row">
+              <button type="submit" class="primary">Open diary</button>
+              <button type="button" id="delete-diary" class="danger">Delete diary</button>
+            </div>
+          </form>
+        </section>
+        <section id="diary-view" class="card hidden">
+          <div class="diary-header">
+            <div>
+              <h2 id="diary-title"></h2>
+              <p id="diary-subtitle" class="hint"></p>
+            </div>
+            <div class="button-row">
+              <button type="button" id="refresh-diary" class="secondary">Refresh</button>
+              <button type="button" id="close-diary" class="secondary">Close</button>
+            </div>
+          </div>
+          <section class="forms-grid">
+            <form id="add-entry-form" class="form-grid">
+              <h3>Add a memory</h3>
+              <label for="entry-date">Date</label>
+              <input id="entry-date" name="date" type="date" required />
+              <label for="entry-title">Title</label>
+              <input id="entry-title" name="title" type="text" required />
+              <label for="entry-description">Description</label>
+              <textarea id="entry-description" name="description" rows="3" required></textarea>
+              <label for="entry-intensity">Intensity (0-10)</label>
+              <input id="entry-intensity" name="intensity" type="number" min="0" max="10" value="5" required />
+              <button type="submit" class="primary">Save memory</button>
+            </form>
+            <form id="search-form" class="form-grid">
+              <h3>Search memories</h3>
+              <label for="search-text">Text in title or description</label>
+              <input id="search-text" name="text" type="text" placeholder="Optional" />
+              <label for="search-date">Exact date</label>
+              <input id="search-date" name="date" type="date" />
+              <label for="search-intensity">Exact intensity</label>
+              <input id="search-intensity" name="intensity" type="number" min="0" max="10" />
+              <div class="button-row">
+                <button type="submit" class="secondary">Search</button>
+                <button type="button" id="reset-search" class="secondary">Reset</button>
+              </div>
+            </form>
+            <form id="average-form" class="form-grid">
+              <h3>Average intensity</h3>
+              <label for="average-start">Start date</label>
+              <input id="average-start" name="start" type="date" />
+              <label for="average-end">End date</label>
+              <input id="average-end" name="end" type="date" />
+              <button type="submit" class="secondary">Calculate</button>
+              <p id="average-result" class="hint"></p>
+            </form>
+          </section>
+          <section>
+            <h3>Memories</h3>
+            <p id="entries-empty" class="hint">No memories recorded yet.</p>
+            <div id="entries" class="entries"></div>
+          </section>
+        </section>
+      </section>
+    </main>
+    <script src="app.js" type="module"></script>
+  </body>
+</html>
