@@ -27,7 +27,7 @@ public class DiaryStorage
     {
         if (DiaryExists(name))
         {
-            throw new InvalidOperationException($"Ya existe un diario con el nombre '{name}'.");
+            throw new InvalidOperationException($"A diary named '{name}' already exists.");
         }
 
         var diary = new Diary { Name = name };
@@ -39,7 +39,7 @@ public class DiaryStorage
         var path = GetDiaryPath(name);
         if (!File.Exists(path))
         {
-            throw new FileNotFoundException("El diario solicitado no existe.", path);
+            throw new FileNotFoundException("The requested diary does not exist.", path);
         }
 
         var encryptedBytes = await File.ReadAllBytesAsync(path, cancellationToken);
@@ -47,11 +47,11 @@ public class DiaryStorage
         {
             var json = EncryptionService.Decrypt(encryptedBytes, password);
             var diary = JsonSerializer.Deserialize<Diary>(json, SerializerOptions);
-            return diary ?? throw new InvalidDataException("No fue posible leer el contenido del diario.");
+            return diary ?? throw new InvalidDataException("Unable to read the diary content.");
         }
         catch (CryptographicException)
         {
-            throw new UnauthorizedAccessException("La clave proporcionada es incorrecta.");
+            throw new UnauthorizedAccessException("The provided password is incorrect.");
         }
     }
 

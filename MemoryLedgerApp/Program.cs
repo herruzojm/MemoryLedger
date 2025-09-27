@@ -1,361 +1,284 @@
 using MemoryLedgerApp.Models;
+using MemoryLedgerApp.Models.Api;
 using MemoryLedgerApp.Services;
-using MemoryLedgerApp.Utilities;
 
-var storage = new DiaryStorage(AppContext.BaseDirectory);
-await ShowMainMenuAsync(storage);
+var builder = WebApplication.CreateBuilder(args);
 
-static async Task ShowMainMenuAsync(DiaryStorage storage)
+builder.Services.AddSingleton(new DiaryStorage(AppContext.BaseDirectory));
+
+var app = builder.Build();
+
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
+app.MapGet("/api/diaries", (DiaryStorage storage) =>
 {
-    while (true)
-    {
-        Console.Clear();
-        Console.WriteLine("============================");
-        Console.WriteLine("      MemoryLedger");
-        Console.WriteLine("============================\n");
-        Console.WriteLine("1. Crear un diario");
-        Console.WriteLine("2. Abrir un diario");
-        Console.WriteLine("3. Borrar un diario");
-        Console.WriteLine("0. Salir\n");
-
-        var option = InputHelper.Prompt("Selecciona una opción: ");
-
-        switch (option)
-        {
-            case "1":
-                await CreateDiaryAsync(storage);
-                break;
-            case "2":
-                await OpenDiaryAsync(storage);
-                break;
-            case "3":
-                DeleteDiary(storage);
-                break;
-            case "0":
-                Console.WriteLine("Hasta luego!");
-                return;
-            default:
-                Console.WriteLine("Opción no válida.");
-                Pause();
-                break;
-        }
-    }
-}
-
-static async Task CreateDiaryAsync(DiaryStorage storage)
-{
-    Console.Clear();
-    Console.WriteLine("=== Crear un nuevo diario ===\n");
-
-    var name = InputHelper.PromptRequired("Nombre del diario: ");
-    var password = InputHelper.PromptRequired("Clave del diario: ");
-
-    try
-    {
-        await storage.CreateDiaryAsync(name, password);
-        Console.WriteLine("Diario creado correctamente.");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"No se pudo crear el diario: {ex.Message}");
-    }
-
-    Pause();
-}
-
-static async Task OpenDiaryAsync(DiaryStorage storage)
-{
-    Console.Clear();
-    Console.WriteLine("=== Abrir un diario ===\n");
-
     var diaries = storage.ListDiaries().ToList();
-    if (!diaries.Any())
+    var message = diaries.Count switch
     {
-        Console.WriteLine("No hay diarios disponibles. Crea uno primero.");
-        Pause();
-        return;
-    }
+        0 => "No diaries available yet.",
+        1 => "1 diary available.",
+        _ => $"{diaries.Count} diaries available."
+    };
 
-    Console.WriteLine("Diarios disponibles:");
-    foreach (var diaryName in diaries)
+    return Results.Json(new ApiResponse<IReadOnlyList<string>>(true, message, diaries));
+});
+
+app.MapPost("/api/diaries/create", async (DiaryStorage storage, CreateDiaryRequest request) =>
+{
+    if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.Password))
     {
-        Console.WriteLine($"- {diaryName}");
+        return Results.Json(new ApiResponse(false, "Name and password are required."), statusCode: StatusCodes.Status400BadRequest);
     }
-
-    var name = InputHelper.PromptRequired("Nombre del diario a abrir: ");
-    var password = InputHelper.PromptRequired("Clave del diario: ");
 
     try
     {
-        var diary = await storage.LoadDiaryAsync(name, password);
-        var session = new DiarySession(diary, password, storage);
-        await RunDiarySessionAsync(session);
+        await storage.CreateDiaryAsync(request.Name.Trim(), request.Password.Trim());
+        return Results.Json(new ApiResponse(true, "Diary created successfully."));
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.Json(new ApiResponse(false, ex.Message), statusCode: StatusCodes.Status409Conflict);
+    }
+});
+
+app.MapPost("/api/diaries/open", async (DiaryStorage storage, DiaryCredentials request) =>
+{
+    if (HasMissing(request.Name, request.Password))
+    {
+        return Results.Json(new ApiResponse<DiaryDetailDto>(false, "Name and password are required.", null), statusCode: StatusCodes.Status400BadRequest);
+    }
+
+    try
+    {
+        var session = await CreateSessionAsync(storage, request.Name, request.Password);
+        var detail = new DiaryDetailDto(
+            session.Diary.Name,
+            session.GetEntriesOrderedByDateDesc().Select(ToDto).ToList());
+
+        return Results.Json(new ApiResponse<DiaryDetailDto>(true, "Diary opened successfully.", detail));
     }
     catch (UnauthorizedAccessException)
     {
-        Console.WriteLine("Clave incorrecta. No se pudo abrir el diario.");
-        Pause();
+        return Results.Json(new ApiResponse<DiaryDetailDto>(false, "Incorrect password.", null), statusCode: StatusCodes.Status401Unauthorized);
     }
     catch (FileNotFoundException)
     {
-        Console.WriteLine("El diario no existe.");
-        Pause();
+        return Results.Json(new ApiResponse<DiaryDetailDto>(false, "Diary not found.", null), statusCode: StatusCodes.Status404NotFound);
     }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"No se pudo abrir el diario: {ex.Message}");
-        Pause();
-    }
-}
+});
 
-static void DeleteDiary(DiaryStorage storage)
+app.MapPost("/api/diaries/delete", async (DiaryStorage storage, DeleteDiaryRequest request) =>
 {
-    Console.Clear();
-    Console.WriteLine("=== Borrar un diario ===\n");
-
-    var diaries = storage.ListDiaries().ToList();
-    if (!diaries.Any())
+    if (HasMissing(request.Name, request.Password))
     {
-        Console.WriteLine("No hay diarios para borrar.");
-        Pause();
-        return;
+        return Results.Json(new ApiResponse(false, "Name and password are required."), statusCode: StatusCodes.Status400BadRequest);
     }
-
-    Console.WriteLine("Diarios disponibles:");
-    foreach (var diaryName in diaries)
-    {
-        Console.WriteLine($"- {diaryName}");
-    }
-
-    var name = InputHelper.PromptRequired("Nombre del diario a borrar: ");
-    var password = InputHelper.PromptRequired("Confirma la clave del diario: ");
 
     try
     {
-        // Intentamos abrirlo para validar la clave antes de borrarlo
-        storage.LoadDiaryAsync(name, password).GetAwaiter().GetResult();
-        storage.DeleteDiary(name);
-        Console.WriteLine("Diario borrado correctamente.");
+        // Validate password before deletion.
+        await storage.LoadDiaryAsync(request.Name, request.Password);
+        storage.DeleteDiary(request.Name);
+        return Results.Json(new ApiResponse(true, "Diary deleted successfully."));
     }
     catch (UnauthorizedAccessException)
     {
-        Console.WriteLine("Clave incorrecta. No se borró el diario.");
+        return Results.Json(new ApiResponse(false, "Incorrect password."), statusCode: StatusCodes.Status401Unauthorized);
     }
     catch (FileNotFoundException)
     {
-        Console.WriteLine("El diario no existe.");
+        return Results.Json(new ApiResponse(false, "Diary not found."), statusCode: StatusCodes.Status404NotFound);
     }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"No se pudo borrar el diario: {ex.Message}");
-    }
+});
 
-    Pause();
-}
-
-static async Task RunDiarySessionAsync(DiarySession session)
+app.MapPost("/api/entries/add", async (DiaryStorage storage, AddEntryRequest request) =>
 {
-    while (true)
+    var validation = ValidateEntryRequest(request.DiaryName, request.Password, request.Title, request.Description, request.Intensity);
+    if (validation is not null)
     {
-        Console.Clear();
-        Console.WriteLine($"=== Diario: {session.Diary.Name} ===\n");
-        DisplayEntries(session.GetEntriesOrderedByDateDesc());
-
-        Console.WriteLine();
-        Console.WriteLine("1. Añadir recuerdo");
-        Console.WriteLine("2. Buscar recuerdos");
-        Console.WriteLine("3. Editar recuerdo");
-        Console.WriteLine("4. Borrar recuerdo");
-        Console.WriteLine("5. Informe de intensidad media");
-        Console.WriteLine("0. Cerrar diario\n");
-
-        var option = InputHelper.Prompt("Selecciona una opción: ");
-        switch (option)
-        {
-            case "1":
-                await AddMemoryAsync(session);
-                break;
-            case "2":
-                SearchMemories(session);
-                break;
-            case "3":
-                await EditMemoryAsync(session);
-                break;
-            case "4":
-                await DeleteMemoryAsync(session);
-                break;
-            case "5":
-                ShowAverageIntensity(session);
-                break;
-            case "0":
-                return;
-            default:
-                Console.WriteLine("Opción no válida.");
-                Pause();
-                break;
-        }
-    }
-}
-
-static async Task AddMemoryAsync(DiarySession session)
-{
-    Console.Clear();
-    Console.WriteLine("=== Añadir recuerdo ===\n");
-
-    var date = InputHelper.PromptDate("Fecha (YYYY-MM-DD): ");
-    var title = InputHelper.PromptRequired("Título: ");
-    var description = InputHelper.PromptRequired("Descripción: ");
-    var intensity = InputHelper.PromptInt("Intensidad (0-10): ", 0, 10);
-
-    var entry = session.AddEntry(date, title, description, intensity);
-    await session.SaveAsync();
-
-    Console.WriteLine($"Recuerdo #{entry.Id} guardado correctamente.");
-    Pause();
-}
-
-static void SearchMemories(DiarySession session)
-{
-    Console.Clear();
-    Console.WriteLine("=== Buscar recuerdos ===\n");
-
-    var text = InputHelper.PromptOptionalString("Texto en título o descripción (opcional): ");
-    var date = InputHelper.PromptOptionalDate("Fecha exacta (YYYY-MM-DD, opcional): ");
-    var intensity = InputHelper.PromptOptionalInt("Intensidad exacta (opcional): ");
-
-    var results = session.SearchEntries(text, date, intensity).ToList();
-
-    if (!results.Any())
-    {
-        Console.WriteLine("No se encontraron recuerdos con esos criterios.");
-    }
-    else
-    {
-        DisplayEntries(results);
+        return validation;
     }
 
-    Pause();
-}
-
-static async Task EditMemoryAsync(DiarySession session)
-{
-    Console.Clear();
-    Console.WriteLine("=== Editar recuerdo ===\n");
-
-    var id = InputHelper.PromptInt("Id del recuerdo a editar: ");
-    var updated = session.UpdateEntry(id, entry =>
+    try
     {
-        Console.WriteLine("Presiona Enter para mantener el valor actual.");
-        var newDate = InputHelper.PromptOptionalDate($"Fecha ({entry.Date:yyyy-MM-dd}): ");
-        if (newDate.HasValue)
-        {
-            entry.Date = newDate.Value;
-        }
-
-        var newTitle = InputHelper.PromptOptionalString($"Título ({entry.Title}): ");
-        if (!string.IsNullOrWhiteSpace(newTitle))
-        {
-            entry.Title = newTitle;
-        }
-
-        var newDescription = InputHelper.PromptOptionalString($"Descripción ({entry.Description}): ");
-        if (!string.IsNullOrWhiteSpace(newDescription))
-        {
-            entry.Description = newDescription;
-        }
-
-        var newIntensity = InputHelper.PromptOptionalInt($"Intensidad ({entry.Intensity}): ");
-        if (newIntensity.HasValue)
-        {
-            entry.Intensity = newIntensity.Value;
-        }
-    });
-
-    if (!updated)
-    {
-        Console.WriteLine("No se encontró un recuerdo con ese Id.");
-    }
-    else
-    {
+        var session = await CreateSessionAsync(storage, request.DiaryName, request.Password);
+        session.AddEntry(request.Date, request.Title.Trim(), request.Description.Trim(), request.Intensity);
         await session.SaveAsync();
-        Console.WriteLine("Recuerdo actualizado correctamente.");
+        return Results.Json(new ApiResponse(true, "Memory added successfully."));
     }
+    catch (UnauthorizedAccessException)
+    {
+        return Results.Json(new ApiResponse(false, "Incorrect password."), statusCode: StatusCodes.Status401Unauthorized);
+    }
+    catch (FileNotFoundException)
+    {
+        return Results.Json(new ApiResponse(false, "Diary not found."), statusCode: StatusCodes.Status404NotFound);
+    }
+});
 
-    Pause();
-}
-
-static async Task DeleteMemoryAsync(DiarySession session)
+app.MapPost("/api/entries/update", async (DiaryStorage storage, UpdateEntryRequest request) =>
 {
-    Console.Clear();
-    Console.WriteLine("=== Borrar recuerdo ===\n");
-
-    var id = InputHelper.PromptInt("Id del recuerdo a borrar: ");
-    var deleted = session.DeleteEntry(id);
-
-    if (!deleted)
+    var validation = ValidateEntryRequest(request.DiaryName, request.Password, request.Title, request.Description, request.Intensity);
+    if (validation is not null)
     {
-        Console.WriteLine("No se encontró un recuerdo con ese Id.");
+        return validation;
     }
-    else
+
+    try
     {
+        var session = await CreateSessionAsync(storage, request.DiaryName, request.Password);
+        var updated = session.UpdateEntry(request.EntryId, entry =>
+        {
+            entry.Date = request.Date;
+            entry.Title = request.Title.Trim();
+            entry.Description = request.Description.Trim();
+            entry.Intensity = request.Intensity;
+        });
+
+        if (!updated)
+        {
+            return Results.Json(new ApiResponse(false, "Memory not found."), statusCode: StatusCodes.Status404NotFound);
+        }
+
         await session.SaveAsync();
-        Console.WriteLine("Recuerdo borrado correctamente.");
+        return Results.Json(new ApiResponse(true, "Memory updated successfully."));
     }
+    catch (UnauthorizedAccessException)
+    {
+        return Results.Json(new ApiResponse(false, "Incorrect password."), statusCode: StatusCodes.Status401Unauthorized);
+    }
+    catch (FileNotFoundException)
+    {
+        return Results.Json(new ApiResponse(false, "Diary not found."), statusCode: StatusCodes.Status404NotFound);
+    }
+});
 
-    Pause();
-}
-
-static void ShowAverageIntensity(DiarySession session)
+app.MapPost("/api/entries/delete", async (DiaryStorage storage, DeleteEntryRequest request) =>
 {
-    Console.Clear();
-    Console.WriteLine("=== Informe de intensidad media ===\n");
-
-    var defaultStart = DateTime.Today.AddYears(-1);
-    var defaultEnd = DateTime.Today;
-    Console.WriteLine($"Rango por defecto: {defaultStart:yyyy-MM-dd} a {defaultEnd:yyyy-MM-dd}\n");
-
-    var start = InputHelper.PromptOptionalDate("Fecha de inicio (Enter para usar el valor por defecto): ") ?? defaultStart;
-    var end = InputHelper.PromptOptionalDate("Fecha de fin (Enter para usar el valor por defecto): ") ?? defaultEnd;
-
-    if (end < start)
+    if (HasMissing(request.DiaryName, request.Password))
     {
-        Console.WriteLine("La fecha de fin no puede ser anterior a la fecha de inicio.");
-        Pause();
-        return;
+        return Results.Json(new ApiResponse(false, "Name and password are required."), statusCode: StatusCodes.Status400BadRequest);
     }
 
-    var average = session.AverageIntensity(start, end);
-    if (average is null)
+    try
     {
-        Console.WriteLine("No hay recuerdos en ese rango.");
+        var session = await CreateSessionAsync(storage, request.DiaryName, request.Password);
+        var deleted = session.DeleteEntry(request.EntryId);
+
+        if (!deleted)
+        {
+            return Results.Json(new ApiResponse(false, "Memory not found."), statusCode: StatusCodes.Status404NotFound);
+        }
+
+        await session.SaveAsync();
+        return Results.Json(new ApiResponse(true, "Memory deleted successfully."));
     }
-    else
+    catch (UnauthorizedAccessException)
     {
-        Console.WriteLine($"Intensidad media entre {start:yyyy-MM-dd} y {end:yyyy-MM-dd}: {average:0.00}");
+        return Results.Json(new ApiResponse(false, "Incorrect password."), statusCode: StatusCodes.Status401Unauthorized);
     }
+    catch (FileNotFoundException)
+    {
+        return Results.Json(new ApiResponse(false, "Diary not found."), statusCode: StatusCodes.Status404NotFound);
+    }
+});
 
-    Pause();
-}
-
-static void DisplayEntries(IEnumerable<MemoryEntry> entries)
+app.MapPost("/api/entries/search", async (DiaryStorage storage, SearchEntriesRequest request) =>
 {
-    var list = entries.ToList();
-    if (!list.Any())
+    if (HasMissing(request.DiaryName, request.Password))
     {
-        Console.WriteLine("No hay recuerdos registrados.");
-        return;
+        return Results.Json(new ApiResponse<IEnumerable<MemoryEntryDto>>(false, "Name and password are required.", null), statusCode: StatusCodes.Status400BadRequest);
     }
 
-    foreach (var entry in list)
+    try
     {
-        Console.WriteLine($"#{entry.Id} | {entry.Date:yyyy-MM-dd} | Intensidad: {entry.Intensity}");
-        Console.WriteLine($"Título: {entry.Title}");
-        Console.WriteLine($"Descripción: {entry.Description}\n");
-    }
-}
+        var session = await CreateSessionAsync(storage, request.DiaryName, request.Password);
+        var results = session
+            .SearchEntries(request.Text, request.Date, request.Intensity)
+            .Select(ToDto)
+            .ToList();
 
-static void Pause()
+        var message = results.Count == 0 ? "No memories matched your filters." : $"Found {results.Count} memories.";
+        return Results.Json(new ApiResponse<IReadOnlyList<MemoryEntryDto>>(true, message, results));
+    }
+    catch (UnauthorizedAccessException)
+    {
+        return Results.Json(new ApiResponse<IEnumerable<MemoryEntryDto>>(false, "Incorrect password.", null), statusCode: StatusCodes.Status401Unauthorized);
+    }
+    catch (FileNotFoundException)
+    {
+        return Results.Json(new ApiResponse<IEnumerable<MemoryEntryDto>>(false, "Diary not found.", null), statusCode: StatusCodes.Status404NotFound);
+    }
+});
+
+app.MapPost("/api/entries/average", async (DiaryStorage storage, AverageIntensityRequest request) =>
 {
-    Console.WriteLine("\nPresiona Enter para continuar...");
-    Console.ReadLine();
+    if (HasMissing(request.DiaryName, request.Password))
+    {
+        return Results.Json(new ApiResponse<AverageIntensityResponse>(false, "Name and password are required.", null), statusCode: StatusCodes.Status400BadRequest);
+    }
+
+    if (request.Start.HasValue && request.End.HasValue && request.End < request.Start)
+    {
+        return Results.Json(new ApiResponse<AverageIntensityResponse>(false, "End date cannot be before the start date.", null), statusCode: StatusCodes.Status400BadRequest);
+    }
+
+    try
+    {
+        var session = await CreateSessionAsync(storage, request.DiaryName, request.Password);
+        var start = request.Start ?? DateTime.Today.AddYears(-1);
+        var end = request.End ?? DateTime.Today;
+        var average = session.AverageIntensity(start, end);
+        var response = new AverageIntensityResponse(average, start, end);
+        var message = average.HasValue
+            ? $"Average intensity from {start:yyyy-MM-dd} to {end:yyyy-MM-dd} is {average:0.00}."
+            : "No memories were found in the selected range.";
+
+        return Results.Json(new ApiResponse<AverageIntensityResponse>(true, message, response));
+    }
+    catch (UnauthorizedAccessException)
+    {
+        return Results.Json(new ApiResponse<AverageIntensityResponse>(false, "Incorrect password.", null), statusCode: StatusCodes.Status401Unauthorized);
+    }
+    catch (FileNotFoundException)
+    {
+        return Results.Json(new ApiResponse<AverageIntensityResponse>(false, "Diary not found.", null), statusCode: StatusCodes.Status404NotFound);
+    }
+});
+
+app.MapFallbackToFile("index.html");
+
+app.Run();
+
+static bool HasMissing(string? name, string? password) =>
+    string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(password);
+
+static IResult? ValidateEntryRequest(string diaryName, string password, string title, string description, int intensity)
+{
+    if (HasMissing(diaryName, password))
+    {
+        return Results.Json(new ApiResponse(false, "Name and password are required."), statusCode: StatusCodes.Status400BadRequest);
+    }
+
+    if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(description))
+    {
+        return Results.Json(new ApiResponse(false, "Title and description are required."), statusCode: StatusCodes.Status400BadRequest);
+    }
+
+    if (intensity is < 0 or > 10)
+    {
+        return Results.Json(new ApiResponse(false, "Intensity must be between 0 and 10."), statusCode: StatusCodes.Status400BadRequest);
+    }
+
+    return null;
 }
+
+static async Task<DiarySession> CreateSessionAsync(DiaryStorage storage, string name, string password)
+{
+    var diary = await storage.LoadDiaryAsync(name, password);
+    return new DiarySession(diary, password, storage);
+}
+
+static MemoryEntryDto ToDto(MemoryEntry entry) =>
+    new(entry.Id, entry.Date, entry.Title, entry.Description, entry.Intensity);
