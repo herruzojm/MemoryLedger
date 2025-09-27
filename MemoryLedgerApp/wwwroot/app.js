@@ -12,16 +12,26 @@ const openForm = document.getElementById("open-diary-form");
 const deleteDiaryButton = document.getElementById("delete-diary");
 const refreshButton = document.getElementById("refresh-diary");
 const closeButton = document.getElementById("close-diary");
-const addEntryForm = document.getElementById("add-entry-form");
+const addEntryButton = document.getElementById("add-entry");
 const searchForm = document.getElementById("search-form");
 const resetSearchButton = document.getElementById("reset-search");
 const averageForm = document.getElementById("average-form");
+const entryModal = document.getElementById("entry-modal");
+const entryModalTitle = document.getElementById("entry-modal-title");
+const entryForm = document.getElementById("entry-form");
+const entrySubmitButton = document.getElementById("entry-submit");
+const entryCancelButton = document.getElementById("entry-cancel");
+const entryCloseButton = document.getElementById("entry-close");
 
 const entryDateInput = document.getElementById("entry-date");
+const entryTitleInput = document.getElementById("entry-title");
+const entryDescriptionInput = document.getElementById("entry-description");
+const entryIntensityInput = document.getElementById("entry-intensity");
 
 let currentDiary = null;
 let currentPassword = null;
 let entriesCache = [];
+let editingEntryId = null;
 
 const getToday = () => new Date().toISOString().slice(0, 10);
 entryDateInput.value = getToday();
@@ -89,24 +99,59 @@ function init() {
     showMessage("Diary closed.", "success");
   });
 
-  addEntryForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
+  addEntryButton.addEventListener("click", () => {
     if (!ensureDiaryOpen()) {
       return;
     }
 
-    const formData = new FormData(addEntryForm);
+    openEntryModal("create");
+  });
+
+  entryCancelButton.addEventListener("click", () => {
+    closeEntryModal();
+  });
+
+  entryCloseButton.addEventListener("click", () => {
+    closeEntryModal();
+  });
+
+  entryModal.addEventListener("click", (event) => {
+    if (event.target === entryModal) {
+      closeEntryModal();
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !entryModal.classList.contains("hidden")) {
+      closeEntryModal();
+    }
+  });
+
+  entryForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!ensureDiaryOpen()) {
+      closeEntryModal();
+      return;
+    }
+
+    const formData = new FormData(entryForm);
     const payload = Object.fromEntries(formData.entries());
     payload.diaryName = currentDiary;
     payload.password = currentPassword;
     payload.intensity = Number(payload.intensity);
 
-    const response = await apiPost("/api/entries/add", payload);
+    let response;
+    if (editingEntryId !== null) {
+      payload.entryId = editingEntryId;
+      response = await apiPost("/api/entries/update", payload);
+    } else {
+      response = await apiPost("/api/entries/add", payload);
+    }
+
     showMessage(response.message, response.ok ? "success" : "error");
 
     if (response.ok) {
-      addEntryForm.reset();
-      entryDateInput.value = getToday();
+      closeEntryModal();
       await openDiary(currentDiary, currentPassword, { silent: true });
     }
   });
@@ -174,7 +219,7 @@ function init() {
     if (button.dataset.action === "delete") {
       await deleteEntry(entryId);
     } else if (button.dataset.action === "edit") {
-      await editEntry(entryId);
+      editEntry(entryId);
     }
   });
 }
@@ -254,7 +299,7 @@ async function deleteEntry(entryId) {
   }
 }
 
-async function editEntry(entryId) {
+function editEntry(entryId) {
   if (!ensureDiaryOpen()) {
     return;
   }
@@ -265,39 +310,42 @@ async function editEntry(entryId) {
     return;
   }
 
-  const updatedTitle = prompt("Title", entry.title);
-  if (updatedTitle === null) return;
+  openEntryModal("edit", entry);
+}
 
-  const updatedDescription = prompt("Description", entry.description);
-  if (updatedDescription === null) return;
+function openEntryModal(mode, entry) {
+  editingEntryId = mode === "edit" && entry ? entry.id : null;
 
-  const updatedIntensityInput = prompt("Intensity (0-10)", entry.intensity);
-  if (updatedIntensityInput === null) return;
-  const updatedIntensity = Number(updatedIntensityInput);
-  if (Number.isNaN(updatedIntensity)) {
-    showMessage("Intensity must be a number between 0 and 10.", "error");
-    return;
+  entryForm.reset();
+
+  if (mode === "edit" && entry) {
+    entryModalTitle.textContent = "Edit memory";
+    entrySubmitButton.textContent = "Update memory";
+    entryDateInput.value = formatDate(entry.date);
+    entryTitleInput.value = entry.title;
+    entryDescriptionInput.value = entry.description;
+    entryIntensityInput.value = entry.intensity;
+  } else {
+    entryModalTitle.textContent = "Add memory";
+    entrySubmitButton.textContent = "Save memory";
+    entryDateInput.value = getToday();
+    entryTitleInput.value = "";
+    entryDescriptionInput.value = "";
+    entryIntensityInput.value = 5;
   }
 
-  const updatedDateInput = prompt("Date (YYYY-MM-DD)", formatDate(entry.date));
-  if (updatedDateInput === null) return;
+  entryModal.classList.remove("hidden");
+  document.body.classList.add("modal-open");
+  entryTitleInput.focus();
+}
 
-  const payload = {
-    diaryName: currentDiary,
-    password: currentPassword,
-    entryId,
-    title: updatedTitle.trim(),
-    description: updatedDescription.trim(),
-    intensity: updatedIntensity,
-    date: updatedDateInput,
-  };
-
-  const response = await apiPost("/api/entries/update", payload);
-  showMessage(response.message, response.ok ? "success" : "error");
-
-  if (response.ok) {
-    await openDiary(currentDiary, currentPassword, { silent: true });
-  }
+function closeEntryModal() {
+  editingEntryId = null;
+  entryModal.classList.add("hidden");
+  document.body.classList.remove("modal-open");
+  entryForm.reset();
+  entryDateInput.value = getToday();
+  entryIntensityInput.value = 5;
 }
 
 function renderEntries(entries, options = {}) {
