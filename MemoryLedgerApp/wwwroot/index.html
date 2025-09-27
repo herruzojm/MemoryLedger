@@ -51,23 +51,12 @@
               <p id="diary-subtitle" class="hint"></p>
             </div>
             <div class="button-row">
+              <button type="button" id="add-entry" class="primary">Add memory</button>
               <button type="button" id="refresh-diary" class="secondary">Refresh</button>
               <button type="button" id="close-diary" class="secondary">Close</button>
             </div>
           </div>
           <section class="forms-grid">
-            <form id="add-entry-form" class="form-grid">
-              <h3>Add a memory</h3>
-              <label for="entry-date">Date</label>
-              <input id="entry-date" name="date" type="date" required />
-              <label for="entry-title">Title</label>
-              <input id="entry-title" name="title" type="text" required />
-              <label for="entry-description">Description</label>
-              <textarea id="entry-description" name="description" rows="3" required></textarea>
-              <label for="entry-intensity">Intensity (0-10)</label>
-              <input id="entry-intensity" name="intensity" type="number" min="0" max="10" value="5" required />
-              <button type="submit" class="primary">Save memory</button>
-            </form>
             <form id="search-form" class="form-grid">
               <h3>Search memories</h3>
               <label for="search-text">Text in title or description</label>
@@ -99,6 +88,28 @@
         </section>
       </section>
     </main>
+    <div id="entry-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="entry-modal-title">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="entry-modal-title">Add memory</h2>
+          <button type="button" id="entry-close" class="icon-button" aria-label="Close">×</button>
+        </div>
+        <form id="entry-form" class="form-grid">
+          <label for="entry-date">Date</label>
+          <input id="entry-date" name="date" type="date" required />
+          <label for="entry-title">Title</label>
+          <input id="entry-title" name="title" type="text" required />
+          <label for="entry-description">Description</label>
+          <textarea id="entry-description" name="description" rows="4" required></textarea>
+          <label for="entry-intensity">Intensity (0-10)</label>
+          <input id="entry-intensity" name="intensity" type="number" min="0" max="10" value="5" required />
+          <div class="modal-actions">
+            <button type="button" id="entry-cancel" class="secondary">Cancel</button>
+            <button type="submit" id="entry-submit" class="primary">Save memory</button>
+          </div>
+        </form>
+      </div>
+    </div>
     <script src="app.js" type="module"></script>
   </body>
 </html>

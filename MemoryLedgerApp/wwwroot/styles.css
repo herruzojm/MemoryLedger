@@ -176,6 +176,10 @@ button.danger {
   margin-bottom: 1.5rem;
 }
 
+.diary-header .button-row {
+  justify-content: flex-end;
+}
+
 .entries {
   display: flex;
   flex-direction: column;
@@ -197,6 +201,63 @@ button.danger {
   justify-content: space-between;
   gap: 0.75rem;
   flex-wrap: wrap;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 1000;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  background: #ffffff;
+  border-radius: 18px;
+  max-width: min(520px, 100%);
+  width: min(520px, 100%);
+  padding: 1.75rem;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.25);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.icon-button {
+  background: transparent;
+  color: inherit;
+  font-size: 1.5rem;
+  line-height: 1;
+  padding: 0.25rem 0.5rem;
+  border-radius: 50%;
+}
+
+.icon-button:hover {
+  background: rgba(15, 23, 42, 0.08);
+}
+
+body.modal-open {
+  overflow: hidden;
 }
 
 .entry-title {
