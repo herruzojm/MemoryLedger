@@ -1,4 +1,29 @@
 # MemoryLedger
+
+## MemoryLedgerApp (console skeleton)
+
+`MemoryLedgerApp` es una aplicación de consola escrita en C# (.NET 8) pensada como esqueleto funcional para gestionar diarios cifrados de recuerdos. El objetivo principal es disponer de una base portable (sin instalador) que permita evolucionar la solución.
+
+### Características clave
+
+- Gestión de múltiples diarios protegidos mediante contraseña. Cada diario se almacena en disco como un archivo independiente cifrado (AES-256 CBC + PBKDF2).
+- Alta, edición, búsqueda y eliminación de recuerdos con los campos: identificador numérico, fecha, título, descripción e intensidad.
+- Listado de recuerdos ordenado por fecha descendente.
+- Informe básico de intensidad media en un rango de fechas (por defecto, último año).
+
+### Ejecución local
+
+1. Instala el SDK de [.NET 8](https://dotnet.microsoft.com/download).
+2. Desde la carpeta raíz del repositorio ejecuta:
+   ```bash
+   dotnet run --project MemoryLedgerApp
+   ```
+3. Los diarios se guardan en la subcarpeta `MemoryLedgerApp/bin/Debug/net8.0/diaries` (o la correspondiente al modo de compilación) junto al ejecutable publicado.
+
+Para crear distribuciones portables se puede usar `dotnet publish` con la opción `--self-contained` y el runtime correspondiente (win-x64, linux-x64, osx-arm64, etc.).
+
+---
+
 Project Issues (English – GitHub/Jira-style)
 
 EPIC: Portable App Foundation
