@@ -12,6 +12,10 @@ const openForm = document.getElementById("open-diary-form");
 const openModal = document.getElementById("open-modal");
 const openModalCloseButton = document.getElementById("open-close");
 const openModalCancelButton = document.getElementById("open-cancel");
+const createModal = document.getElementById("create-modal");
+const createModalCloseButton = document.getElementById("create-close");
+const createModalCancelButton = document.getElementById("create-cancel");
+const createDiaryButton = document.getElementById("create-diary-button");
 const deleteDiaryButton = document.getElementById("delete-diary");
 const refreshButton = document.getElementById("refresh-diary");
 const closeButton = document.getElementById("close-diary");
@@ -59,6 +63,26 @@ function init() {
     statisticsButton.disabled = true;
   }
 
+  if (createDiaryButton) {
+    createDiaryButton.addEventListener("click", () => {
+      openCreateModal();
+    });
+  }
+
+  createModalCloseButton.addEventListener("click", () => {
+    closeCreateModal();
+  });
+
+  createModalCancelButton.addEventListener("click", () => {
+    closeCreateModal();
+  });
+
+  createModal.addEventListener("click", (event) => {
+    if (event.target === createModal) {
+      closeCreateModal();
+    }
+  });
+
   openModalCloseButton.addEventListener("click", () => {
     closeOpenModal();
   });
@@ -83,6 +107,7 @@ function init() {
 
     if (response.ok) {
       createForm.reset();
+      closeCreateModal();
       loadDiaries();
     }
   });
@@ -155,7 +180,9 @@ function init() {
       return;
     }
 
-    if (isOpenModalOpen()) {
+    if (isCreateModalOpen()) {
+      closeCreateModal();
+    } else if (isOpenModalOpen()) {
       closeOpenModal();
     } else if (isStatsModalOpen()) {
       closeStatisticsModal();
@@ -301,6 +328,29 @@ async function openDiaryFromForm() {
   }
 
   await openDiary(name, password);
+}
+
+function openCreateModal() {
+  createForm.reset();
+  createModal.classList.remove("hidden");
+  document.body.classList.add("modal-open");
+  createForm.name.focus();
+}
+
+function closeCreateModal() {
+  if (createModal.classList.contains("hidden")) {
+    return;
+  }
+
+  createModal.classList.add("hidden");
+  createForm.reset();
+  if (!isAnyModalOpen()) {
+    document.body.classList.remove("modal-open");
+  }
+}
+
+function isCreateModalOpen() {
+  return !createModal.classList.contains("hidden");
 }
 
 function openDiaryModal(presetName = "") {
@@ -653,7 +703,12 @@ function isStatsModalOpen() {
 }
 
 function isAnyModalOpen() {
-  return isOpenModalOpen() || !entryModal.classList.contains("hidden") || isStatsModalOpen();
+  return (
+    isCreateModalOpen() ||
+    isOpenModalOpen() ||
+    !entryModal.classList.contains("hidden") ||
+    isStatsModalOpen()
+  );
 }
 
 async function openStatisticsModal() {

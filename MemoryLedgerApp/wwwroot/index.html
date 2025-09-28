@@ -14,19 +14,10 @@
     <main class="app-layout">
       <aside class="sidebar">
         <section class="card">
+          <button type="button" id="create-diary-button" class="primary full-width">Create diary</button>
           <h2>Available diaries</h2>
           <ul id="diary-list" class="diary-list"></ul>
           <p class="hint">Click a diary to enter its password and open it.</p>
-        </section>
-        <section class="card">
-          <h2>Create a diary</h2>
-          <form id="create-diary-form" class="form-grid">
-            <label for="create-name">Name</label>
-            <input id="create-name" name="name" type="text" required />
-            <label for="create-password">Password</label>
-            <input id="create-password" name="password" type="password" required />
-            <button type="submit" class="primary">Create diary</button>
-          </form>
         </section>
         <section class="card">
           <h2>Statistics</h2>
@@ -112,6 +103,24 @@
           <div class="modal-actions">
             <button type="button" id="open-cancel" class="secondary">Cancel</button>
             <button type="submit" class="primary">Open diary</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div id="create-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="create-modal-title">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="create-modal-title">Create a diary</h2>
+          <button type="button" id="create-close" class="icon-button" aria-label="Close">×</button>
+        </div>
+        <form id="create-diary-form" class="form-grid">
+          <label for="create-name">Name</label>
+          <input id="create-name" name="name" type="text" required />
+          <label for="create-password">Password</label>
+          <input id="create-password" name="password" type="password" required />
+          <div class="modal-actions">
+            <button type="button" id="create-cancel" class="secondary">Cancel</button>
+            <button type="submit" class="primary">Create diary</button>
           </div>
         </form>
       </div>
