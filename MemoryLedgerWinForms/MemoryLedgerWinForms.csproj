@@ -19,4 +19,8 @@
       <Link>Shared/Utilities/EncryptionService.cs</Link>
     </Compile>
   </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WinForms.DataVisualization" Version="1.10.0" />
+  </ItemGroup>
 </Project>
