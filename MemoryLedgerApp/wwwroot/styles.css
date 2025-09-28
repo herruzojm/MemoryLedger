@@ -146,6 +146,12 @@ button:active {
   transform: scale(0.98);
 }
 
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 button.primary {
   background: linear-gradient(120deg, #2563eb, #1d4ed8);
   color: #ffffff;
@@ -228,6 +234,11 @@ button.danger {
   border: 1px solid rgba(148, 163, 184, 0.35);
 }
 
+.stats-modal-content {
+  max-width: min(720px, 100%);
+  width: min(720px, 100%);
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;
@@ -258,6 +269,27 @@ button.danger {
 
 body.modal-open {
   overflow: hidden;
+}
+
+#stats-average {
+  margin-bottom: 0.75rem;
+}
+
+.stats-chart-wrapper {
+  position: relative;
+  width: 100%;
+  height: 320px;
+  margin-top: 1.25rem;
+}
+
+.stats-chart-wrapper canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+#stats-empty {
+  margin-top: 1.25rem;
+  text-align: center;
 }
 
 .entry-title {
