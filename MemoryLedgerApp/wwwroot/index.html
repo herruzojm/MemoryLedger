@@ -28,6 +28,11 @@
             <button type="submit" class="primary">Create diary</button>
           </form>
         </section>
+        <section class="card">
+          <h2>Statistics</h2>
+          <p class="hint">Review intensity trends for your memories.</p>
+          <button type="button" id="statistics-button" class="secondary">Open statistics</button>
+        </section>
       </aside>
       <section class="content">
         <div id="message" class="message hidden" role="status" aria-live="polite"></div>
@@ -70,15 +75,6 @@
                 <button type="button" id="reset-search" class="secondary">Reset</button>
               </div>
             </form>
-            <form id="average-form" class="form-grid">
-              <h3>Average intensity</h3>
-              <label for="average-start">Start date</label>
-              <input id="average-start" name="start" type="date" />
-              <label for="average-end">End date</label>
-              <input id="average-end" name="end" type="date" />
-              <button type="submit" id="statistics-button" class="secondary">View statistics</button>
-              <p id="average-result" class="hint"></p>
-            </form>
           </section>
           <section>
             <h3>Memories</h3>
@@ -94,6 +90,19 @@
           <h2 id="stats-modal-title">Diary statistics</h2>
           <button type="button" id="stats-close" class="icon-button" aria-label="Close">×</button>
         </div>
+        <form id="average-form" class="form-grid stats-filter-form">
+          <div class="stats-filter-grid">
+            <div class="stats-filter-field">
+              <label for="average-start">Start date</label>
+              <input id="average-start" name="start" type="date" />
+            </div>
+            <div class="stats-filter-field">
+              <label for="average-end">End date</label>
+              <input id="average-end" name="end" type="date" />
+            </div>
+          </div>
+          <p id="average-result" class="hint"></p>
+        </form>
         <p id="stats-average" class="hint"></p>
         <div id="stats-chart-wrapper" class="stats-chart-wrapper hidden">
           <canvas id="stats-chart" aria-label="Diary intensity chart" role="img"></canvas>

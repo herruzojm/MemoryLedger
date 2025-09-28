@@ -219,6 +219,11 @@ function init() {
       return;
     }
 
+    if (isStatsModalOpen()) {
+      await renderStatisticsChart(stats);
+      return;
+    }
+
     await openStatisticsModal();
   });
 
@@ -308,8 +313,12 @@ function closeDiaryView() {
   diaryTitle.textContent = "";
   diarySubtitle.textContent = "";
   averageForm.reset();
-  averageResult.textContent = "";
-  statsAverageText.textContent = "";
+  if (averageResult) {
+    averageResult.textContent = "";
+  }
+  if (statsAverageText) {
+    statsAverageText.textContent = "";
+  }
   if (statisticsButton) {
     statisticsButton.disabled = true;
     statisticsButton.removeAttribute("title");
@@ -520,36 +529,56 @@ function describeRange({ start, end }) {
 
 function updateAverageSummary(stats = collectStatistics()) {
   if (!currentDiary) {
-    averageResult.textContent = "";
-    statsAverageText.textContent = "";
+    if (averageResult) {
+      averageResult.textContent = "";
+    }
+    if (statsAverageText) {
+      statsAverageText.textContent = "";
+    }
     return stats;
   }
 
   if (!stats.hasEntries) {
     const message = "No memories recorded yet.";
-    averageResult.textContent = message;
-    statsAverageText.textContent = message;
+    if (averageResult) {
+      averageResult.textContent = message;
+    }
+    if (statsAverageText) {
+      statsAverageText.textContent = message;
+    }
     return stats;
   }
 
   if (stats.invalidRange) {
     const message = "Start date cannot be after end date.";
-    averageResult.textContent = message;
-    statsAverageText.textContent = message;
+    if (averageResult) {
+      averageResult.textContent = message;
+    }
+    if (statsAverageText) {
+      statsAverageText.textContent = message;
+    }
     return stats;
   }
 
   if (stats.entries.length === 0) {
     const message = "No memories in the selected range.";
-    averageResult.textContent = message;
-    statsAverageText.textContent = message;
+    if (averageResult) {
+      averageResult.textContent = message;
+    }
+    if (statsAverageText) {
+      statsAverageText.textContent = message;
+    }
     return stats;
   }
 
   const averageValue = Number(stats.average).toFixed(2);
   const summary = `Average intensity ${describeRange(stats)}: ${averageValue}`;
-  averageResult.textContent = summary;
-  statsAverageText.textContent = summary;
+  if (averageResult) {
+    averageResult.textContent = summary;
+  }
+  if (statsAverageText) {
+    statsAverageText.textContent = summary;
+  }
   return stats;
 }
 
