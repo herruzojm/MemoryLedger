@@ -16,7 +16,7 @@
         <section class="card">
           <h2>Available diaries</h2>
           <ul id="diary-list" class="diary-list"></ul>
-          <p class="hint">Use the password field below to open or delete a diary.</p>
+          <p class="hint">Click a diary to enter its password and open it.</p>
         </section>
         <section class="card">
           <h2>Create a diary</h2>
@@ -36,19 +36,6 @@
       </aside>
       <section class="content">
         <div id="message" class="message hidden" role="status" aria-live="polite"></div>
-        <section class="card">
-          <h2>Open a diary</h2>
-          <form id="open-diary-form" class="form-grid">
-            <label for="open-name">Name</label>
-            <input id="open-name" name="name" type="text" required />
-            <label for="open-password">Password</label>
-            <input id="open-password" name="password" type="password" required />
-            <div class="button-row">
-              <button type="submit" class="primary">Open diary</button>
-              <button type="button" id="delete-diary" class="danger">Delete diary</button>
-            </div>
-          </form>
-        </section>
         <section id="diary-view" class="card hidden">
           <div class="diary-header">
             <div>
@@ -59,6 +46,7 @@
               <button type="button" id="add-entry" class="primary">Add memory</button>
               <button type="button" id="refresh-diary" class="secondary">Refresh</button>
               <button type="button" id="close-diary" class="secondary">Close</button>
+              <button type="button" id="delete-diary" class="danger hidden">Delete diary</button>
             </div>
           </div>
           <section class="forms-grid">
@@ -108,6 +96,24 @@
           <canvas id="stats-chart" aria-label="Diary intensity chart" role="img"></canvas>
         </div>
         <p id="stats-empty" class="hint hidden"></p>
+      </div>
+    </div>
+    <div id="open-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="open-modal-title">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="open-modal-title">Open a diary</h2>
+          <button type="button" id="open-close" class="icon-button" aria-label="Close">×</button>
+        </div>
+        <form id="open-diary-form" class="form-grid">
+          <label for="open-name">Name</label>
+          <input id="open-name" name="name" type="text" required />
+          <label for="open-password">Password</label>
+          <input id="open-password" name="password" type="password" required />
+          <div class="modal-actions">
+            <button type="button" id="open-cancel" class="secondary">Cancel</button>
+            <button type="submit" class="primary">Open diary</button>
+          </div>
+        </form>
       </div>
     </div>
     <div id="entry-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="entry-modal-title">
