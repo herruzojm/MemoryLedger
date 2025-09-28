@@ -60,6 +60,7 @@ partial class MainForm
         addEntryButton = new Button();
         updateEntryButton = new Button();
         deleteEntryButton = new Button();
+        statisticsButton = new Button();
         statusLabel = new Label();
         mainLayout.SuspendLayout();
         diariesGroupBox.SuspendLayout();
@@ -368,6 +369,7 @@ partial class MainForm
         entryButtonsPanel.Controls.Add(addEntryButton);
         entryButtonsPanel.Controls.Add(updateEntryButton);
         entryButtonsPanel.Controls.Add(deleteEntryButton);
+        entryButtonsPanel.Controls.Add(statisticsButton);
         entryButtonsPanel.Dock = DockStyle.Fill;
         entryButtonsPanel.FlowDirection = FlowDirection.RightToLeft;
         entryButtonsPanel.Location = new System.Drawing.Point(3, 602);
@@ -396,7 +398,7 @@ partial class MainForm
         updateEntryButton.UseVisualStyleBackColor = true;
         // 
         // deleteEntryButton
-        // 
+        //
         deleteEntryButton.AutoSize = true;
         deleteEntryButton.Location = new System.Drawing.Point(400, 3);
         deleteEntryButton.Name = "deleteEntryButton";
@@ -404,6 +406,17 @@ partial class MainForm
         deleteEntryButton.TabIndex = 2;
         deleteEntryButton.Text = "Eliminar actual";
         deleteEntryButton.UseVisualStyleBackColor = true;
+        //
+        // statisticsButton
+        //
+        statisticsButton.AutoSize = true;
+        statisticsButton.Enabled = false;
+        statisticsButton.Location = new System.Drawing.Point(264, 3);
+        statisticsButton.Name = "statisticsButton";
+        statisticsButton.Size = new System.Drawing.Size(130, 29);
+        statisticsButton.TabIndex = 3;
+        statisticsButton.Text = "Estadísticas";
+        statisticsButton.UseVisualStyleBackColor = true;
         // 
         // statusLabel
         // 
@@ -475,5 +488,6 @@ partial class MainForm
     private Button addEntryButton;
     private Button updateEntryButton;
     private Button deleteEntryButton;
+    private Button statisticsButton;
     private Label statusLabel;
 }

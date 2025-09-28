@@ -38,6 +38,7 @@ public partial class MainForm : Form
         addEntryButton.Click += async (_, _) => await AddEntryAsync();
         updateEntryButton.Click += async (_, _) => await UpdateEntryAsync();
         deleteEntryButton.Click += async (_, _) => await DeleteEntryAsync();
+        statisticsButton.Click += (_, _) => ShowStatistics();
     }
 
     private void LoadDiaries()
@@ -384,6 +385,25 @@ public partial class MainForm : Form
         addEntryButton.Enabled = hasSession;
         updateEntryButton.Enabled = hasSession && hasSelection;
         deleteEntryButton.Enabled = hasSession && hasSelection;
+        var hasEntries = hasSession && _currentSession!.Diary.Entries.Count > 0;
+        statisticsButton.Enabled = hasEntries;
+    }
+
+    private void ShowStatistics()
+    {
+        if (!EnsureSessionActive())
+        {
+            return;
+        }
+
+        if (_currentSession!.Diary.Entries.Count == 0)
+        {
+            MessageBox.Show(this, "No hay recuerdos registrados todavía.", "Sin datos", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        using var dialog = new StatisticsForm(_currentSession.Diary.Entries);
+        dialog.ShowDialog(this);
     }
 
     private void SetStatus(string message)
