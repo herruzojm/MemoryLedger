@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36414.22 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MemoryLedgerApp", "MemoryLedgerApp.csproj", "{FE6938A3-ECFB-5A9E-4328-376640B80F6A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MemoryLedgerApp", "MemoryLedgerApp\MemoryLedgerApp.csproj", "{FE6938A3-ECFB-5A9E-4328-376640B80F6A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MemoryLedgerWinForms", "..\MemoryLedgerWinForms\MemoryLedgerWinForms.csproj", "{7AFE8D95-CA69-0D54-E840-2346D700D0F1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MemoryLedgerWinForms", "MemoryLedgerWinForms\MemoryLedgerWinForms.csproj", "{7AFE8D95-CA69-0D54-E840-2346D700D0F1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
