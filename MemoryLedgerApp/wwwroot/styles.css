@@ -49,6 +49,10 @@ p {
   gap: 1.5rem;
 }
 
+.full-width {
+  width: 100%;
+}
+
 .sidebar #statistics-button {
   width: 100%;
 }
