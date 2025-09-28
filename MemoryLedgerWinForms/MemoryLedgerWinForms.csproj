@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="../MemoryLedgerApp/Models/**/*.cs">
+      <Link>Shared/Models/%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Compile>
+    <Compile Include="../MemoryLedgerApp/Services/**/*.cs">
+      <Link>Shared/Services/%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Compile>
+    <Compile Include="../MemoryLedgerApp/Utilities/EncryptionService.cs">
+      <Link>Shared/Utilities/EncryptionService.cs</Link>
+    </Compile>
+  </ItemGroup>
+</Project>

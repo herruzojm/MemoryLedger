@@ -1,15 +1,15 @@
 # MemoryLedger
 
-## MemoryLedgerApp (console skeleton)
+MemoryLedger es un conjunto de herramientas para gestionar diarios cifrados de recuerdos. El repositorio incluye dos interfaces que comparten el mismo backend de almacenamiento y cifrado:
 
-`MemoryLedgerApp` es una aplicación de consola escrita en C# (.NET 8) pensada como esqueleto funcional para gestionar diarios cifrados de recuerdos. El objetivo principal es disponer de una base portable (sin instalador) que permita evolucionar la solución.
+- **MemoryLedgerApp**: API mínima en ASP.NET Core con interfaz web estática incluida en `wwwroot`.
+- **MemoryLedgerWinForms**: cliente de escritorio en Windows Forms para trabajar sin navegador.
 
-### Características clave
+Ambas aplicaciones guardan los diarios como archivos cifrados (`.mlg`) en una carpeta `diaries` junto al ejecutable utilizado.
 
-- Gestión de múltiples diarios protegidos mediante contraseña. Cada diario se almacena en disco como un archivo independiente cifrado (AES-256 CBC + PBKDF2).
-- Alta, edición, búsqueda y eliminación de recuerdos con los campos: identificador numérico, fecha, título, descripción e intensidad.
-- Listado de recuerdos ordenado por fecha descendente.
-- Informe básico de intensidad media en un rango de fechas (por defecto, último año).
+## MemoryLedgerApp (interfaz web)
+
+`MemoryLedgerApp` expone una API minimalista que sirve una SPA ligera incluida en `wwwroot`. Permite crear diarios protegidos por contraseña, abrirlos y administrar recuerdos.
 
 ### Ejecución local
 
@@ -18,9 +18,30 @@
    ```bash
    dotnet run --project MemoryLedgerApp
    ```
-3. Los diarios se guardan en la subcarpeta `MemoryLedgerApp/bin/Debug/net8.0/diaries` (o la correspondiente al modo de compilación) junto al ejecutable publicado.
+3. Abre un navegador y visita `http://localhost:5000` (o el puerto indicado en la consola).
 
-Para crear distribuciones portables se puede usar `dotnet publish` con la opción `--self-contained` y el runtime correspondiente (win-x64, linux-x64, osx-arm64, etc.).
+## MemoryLedgerWinForms (cliente de escritorio)
+
+El proyecto `MemoryLedgerWinForms` ofrece una alternativa de escritorio sin necesidad de navegador. Reutiliza los modelos, servicios y cifrado de la API, pero presenta una interfaz gráfica tradicional con listas, formularios y cuadros de diálogo.
+
+> ℹ️ Requiere Windows para su ejecución, aunque puede compilarse desde otros sistemas gracias a `EnableWindowsTargeting`.
+
+### Ejecución en Windows
+
+1. Instala el SDK de [.NET 8](https://dotnet.microsoft.com/download).
+2. Desde la carpeta raíz del repositorio ejecuta:
+   ```bash
+   dotnet run --project MemoryLedgerWinForms
+   ```
+3. Los diarios se crean y leen en la carpeta `diaries` situada junto al ejecutable (`bin/Debug/net8.0-windows/diaries` en modo debug).
+
+Para distribuirlo como aplicación portable puedes usar:
+
+```bash
+dotnet publish MemoryLedgerWinForms -c Release -r win-x64 --self-contained true
+```
+
+Esto generará un ejecutable que incluye el runtime de .NET.
 
 ---
 
