@@ -47,9 +47,7 @@ public partial class StatisticsForm : Form
     private void HookEvents()
     {
         startDatePicker.ValueChanged += OnFiltersChanged;
-        startDatePicker.CheckedChanged += OnFiltersChanged;
         endDatePicker.ValueChanged += OnFiltersChanged;
-        endDatePicker.CheckedChanged += OnFiltersChanged;
     }
 
     private void OnFiltersChanged(object? sender, EventArgs e)
