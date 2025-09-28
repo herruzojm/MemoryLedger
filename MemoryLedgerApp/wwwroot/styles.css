@@ -49,6 +49,10 @@ p {
   gap: 1.5rem;
 }
 
+.sidebar #statistics-button {
+  width: 100%;
+}
+
 .card {
   background: #ffffff;
   border-radius: 16px;
@@ -245,6 +249,21 @@ button.danger {
   align-items: center;
   margin-bottom: 1rem;
   gap: 1rem;
+}
+
+.stats-filter-form {
+  margin-bottom: 0.75rem;
+}
+
+.stats-filter-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.stats-filter-field {
+  display: grid;
+  gap: 0.35rem;
 }
 
 .modal-actions {
