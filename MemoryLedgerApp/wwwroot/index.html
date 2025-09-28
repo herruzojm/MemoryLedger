@@ -76,7 +76,7 @@
               <input id="average-start" name="start" type="date" />
               <label for="average-end">End date</label>
               <input id="average-end" name="end" type="date" />
-              <button type="submit" class="secondary">Calculate</button>
+              <button type="submit" id="statistics-button" class="secondary">View statistics</button>
               <p id="average-result" class="hint"></p>
             </form>
           </section>
@@ -88,6 +88,19 @@
         </section>
       </section>
     </main>
+    <div id="stats-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="stats-modal-title">
+      <div class="modal-content stats-modal-content">
+        <div class="modal-header">
+          <h2 id="stats-modal-title">Diary statistics</h2>
+          <button type="button" id="stats-close" class="icon-button" aria-label="Close">×</button>
+        </div>
+        <p id="stats-average" class="hint"></p>
+        <div id="stats-chart-wrapper" class="stats-chart-wrapper hidden">
+          <canvas id="stats-chart" aria-label="Diary intensity chart" role="img"></canvas>
+        </div>
+        <p id="stats-empty" class="hint hidden"></p>
+      </div>
+    </div>
     <div id="entry-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="entry-modal-title">
       <div class="modal-content">
         <div class="modal-header">
