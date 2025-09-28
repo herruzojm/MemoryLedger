@@ -9,6 +9,9 @@ const averageResult = document.getElementById("average-result");
 
 const createForm = document.getElementById("create-diary-form");
 const openForm = document.getElementById("open-diary-form");
+const openModal = document.getElementById("open-modal");
+const openModalCloseButton = document.getElementById("open-close");
+const openModalCancelButton = document.getElementById("open-cancel");
 const deleteDiaryButton = document.getElementById("delete-diary");
 const refreshButton = document.getElementById("refresh-diary");
 const closeButton = document.getElementById("close-diary");
@@ -56,6 +59,20 @@ function init() {
     statisticsButton.disabled = true;
   }
 
+  openModalCloseButton.addEventListener("click", () => {
+    closeOpenModal();
+  });
+
+  openModalCancelButton.addEventListener("click", () => {
+    closeOpenModal();
+  });
+
+  openModal.addEventListener("click", (event) => {
+    if (event.target === openModal) {
+      closeOpenModal();
+    }
+  });
+
   createForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const formData = new FormData(createForm);
@@ -76,25 +93,22 @@ function init() {
   });
 
   deleteDiaryButton.addEventListener("click", async () => {
-    const name = openForm.name.value.trim();
-    const password = openForm.password.value.trim();
-
-    if (!name || !password) {
-      showMessage("Provide both the diary name and password to delete it.", "error");
+    if (!ensureDiaryOpen()) {
       return;
     }
 
-    if (!confirm(`Delete the diary "${name}"? This action cannot be undone.`)) {
+    if (!confirm(`Delete the diary "${currentDiary}"? This action cannot be undone.`)) {
       return;
     }
 
-    const response = await apiPost("/api/diaries/delete", { name, password });
+    const response = await apiPost("/api/diaries/delete", {
+      name: currentDiary,
+      password: currentPassword,
+    });
     showMessage(response.message, response.ok ? "success" : "error");
 
     if (response.ok) {
-      if (currentDiary === name) {
-        closeDiaryView();
-      }
+      closeDiaryView();
       loadDiaries();
       openForm.reset();
     }
@@ -141,7 +155,9 @@ function init() {
       return;
     }
 
-    if (isStatsModalOpen()) {
+    if (isOpenModalOpen()) {
+      closeOpenModal();
+    } else if (isStatsModalOpen()) {
       closeStatisticsModal();
     } else if (!entryModal.classList.contains("hidden")) {
       closeEntryModal();
@@ -282,6 +298,34 @@ async function openDiaryFromForm() {
   await openDiary(name, password);
 }
 
+function openDiaryModal(presetName = "") {
+  openForm.reset();
+  const normalizedName = presetName ?? "";
+  if (normalizedName) {
+    openForm.name.value = normalizedName;
+  }
+  openModal.classList.remove("hidden");
+  document.body.classList.add("modal-open");
+  const focusTarget = normalizedName ? openForm.password : openForm.name;
+  focusTarget.focus();
+}
+
+function closeOpenModal() {
+  if (openModal.classList.contains("hidden")) {
+    return;
+  }
+
+  openModal.classList.add("hidden");
+  openForm.reset();
+  if (!isAnyModalOpen()) {
+    document.body.classList.remove("modal-open");
+  }
+}
+
+function isOpenModalOpen() {
+  return !openModal.classList.contains("hidden");
+}
+
 async function openDiary(name, password, options = {}) {
   const response = await apiPost("/api/diaries/open", { name, password });
   showMessage(response.message, response.ok ? "success" : "error", options.silent);
@@ -299,6 +343,8 @@ async function openDiary(name, password, options = {}) {
   averageForm.reset();
   renderEntries(entriesCache);
   diaryView.classList.remove("hidden");
+  deleteDiaryButton.classList.remove("hidden");
+  closeOpenModal();
 }
 
 function closeDiaryView() {
@@ -321,6 +367,7 @@ function closeDiaryView() {
   entriesContainer.innerHTML = "";
   entriesEmpty.classList.remove("hidden");
   diaryView.classList.add("hidden");
+  deleteDiaryButton.classList.add("hidden");
 }
 
 function ensureDiaryOpen() {
@@ -577,7 +624,7 @@ function isStatsModalOpen() {
 }
 
 function isAnyModalOpen() {
-  return !entryModal.classList.contains("hidden") || isStatsModalOpen();
+  return isOpenModalOpen() || !entryModal.classList.contains("hidden") || isStatsModalOpen();
 }
 
 async function openStatisticsModal() {
@@ -780,14 +827,12 @@ async function loadDiaries() {
     item.textContent = name;
     item.tabIndex = 0;
     item.addEventListener("click", () => {
-      openForm.name.value = name;
-      openForm.name.focus();
+      openDiaryModal(name);
     });
     item.addEventListener("keydown", (event) => {
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
-        openForm.name.value = name;
-        openForm.name.focus();
+        openDiaryModal(name);
       }
     });
     diaryList.append(item);
